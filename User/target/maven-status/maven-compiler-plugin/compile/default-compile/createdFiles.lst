@@ -1,0 +1,6 @@
+com/mycompany/Endpoint/ApplicationConfig.class
+com/mycompany/Persistence/UserCRUD.class
+com/mycompany/Helper/Convert.class
+com/mycompany/Endpoint/UserResource.class
+com/mycompany/Helper/User.class
+com/mycompany/Helper/Authenticate.class

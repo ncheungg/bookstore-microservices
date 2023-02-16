@@ -1,0 +1,9 @@
+com/mycompany/Business/ParseXML.class
+com/mycompany/Frontend/Frontend.class
+com/mycompany/Business/Services.class
+com/mycompany/Helper/Convert.class
+com/mycompany/Helper/Book.class
+com/mycompany/Helper/User.class
+com/mycompany/Helper/Order.class
+com/mycompany/Helper/Authenticate.class
+com/mycompany/Helper/OrdersXML.class

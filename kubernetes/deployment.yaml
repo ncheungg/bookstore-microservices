@@ -1,0 +1,337 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: userdb-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: userdb
+spec:
+  selector:
+    app: userdb
+  ports:
+    - port: 3306
+      targetPort: 3306
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: userdb
+spec:
+  selector:
+    matchLabels:
+      app: userdb
+  template:
+    metadata:
+      labels:
+        app: userdb
+    spec:
+      containers:
+        - name: userdb
+          image: n1cheung/coe692:userdb
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - name: storage
+              mountPath: /data/userdb
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: userdb-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: booksdb-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: booksdb
+spec:
+  selector:
+    app: booksdb
+  ports:
+    - port: 3306
+      targetPort: 3306
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: booksdb
+spec:
+  selector:
+    matchLabels:
+      app: booksdb
+  template:
+    metadata:
+      labels:
+        app: booksdb
+    spec:
+      containers:
+        - name: booksdb
+          image: n1cheung/coe692:booksdb
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - name: storage
+              mountPath: /data/booksdb
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: booksdb-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ordersdb-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ordersdb
+spec:
+  selector:
+    app: ordersdb
+  ports:
+    - port: 3306
+      targetPort: 3306
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ordersdb
+spec:
+  selector:
+    matchLabels:
+      app: ordersdb
+  template:
+    metadata:
+      labels:
+        app: ordersdb
+    spec:
+      containers:
+        - name: ordersdb
+          image: n1cheung/coe692:ordersdb
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - name: storage
+              mountPath: /data/ordersdb
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: ordersdb-pvc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: booksservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: booksservice
+  template:
+    metadata:
+      labels:
+        app: booksservice
+    spec:
+      containers:
+        - name: booksservice
+          image: n1cheung/coe692:booksservice
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_URL
+              value: booksdb:3306
+            - name: kubeMQAddress
+              value: 10.100.11.205:50000
+          imagePullPolicy: Always
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: historyservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: historyservice
+  template:
+    metadata:
+      labels:
+        app: historyservice
+    spec:
+      containers:
+        - name: historyservice
+          image: n1cheung/coe692:historyservice
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_URL
+              value: ordersdb:3306
+            - name: kubeMQAddress
+              value: 10.100.11.205:50000
+          imagePullPolicy: Always
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loginservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: loginservice
+  template:
+    metadata:
+      labels:
+        app: loginservice
+    spec:
+      containers:
+        - name: loginservice
+          image: n1cheung/coe692:loginservice
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_URL
+              value: userdb:3306
+            - name: kubeMQAddress
+              value: 10.100.11.205:50000
+          imagePullPolicy: Always
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: userservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: userservice
+  template:
+    metadata:
+      labels:
+        app: userservice
+    spec:
+      containers:
+        - name: userservice
+          image: n1cheung/coe692:userservice
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_URL
+              value: userdb:3306
+            - name: kubeMQAddress
+              value: 10.100.11.205:50000
+          imagePullPolicy: Always
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontendservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontendservice
+  template:
+    metadata:
+      labels:
+        app: frontendservice
+    spec:
+      containers:
+        - name: frontendservice
+          image: n1cheung/coe692:frontendservice
+          ports:
+            - containerPort: 8080
+          env:
+            - name: historyService
+              value: historyservice:80
+            - name: bookService
+              value: booksservice:80
+            - name: userService
+              value: userservice:80
+            - name: loginService
+              value: loginservice:80
+          imagePullPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: booksservice
+spec:
+  selector:
+    app: booksservice
+  ports:
+    - port: 80
+      targetPort: 8080
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: historyservice
+spec:
+  selector:
+    app: historyservice
+  ports:
+    - port: 80
+      targetPort: 8080
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: loginservice
+spec:
+  selector:
+    app: loginservice
+  ports:
+    - port: 80
+      targetPort: 8080
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: userservice
+spec:
+  selector:
+    app: userservice
+  ports:
+    - port: 80
+      targetPort: 8080
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontendservice
+spec:
+  selector:
+    app: frontendservice
+  ports:
+    - port: 80
+      targetPort: 8080
+  type: LoadBalancer
